@@ -135,6 +135,10 @@ export default defineComponent({
       type: Array as PropType<eventInterface[]>,
       default: () => [],
     },
+    updatedEvents: {
+      type: Array as PropType<eventInterface[]>,
+      default: () => [],
+    },
     selectedDate: {
       type: Date,
       default: new Date(),
@@ -184,30 +188,16 @@ export default defineComponent({
       ErrorsHelper: Errors,
     };
   },
-  computed:{
+  computed: {
     enhancedConfig(): configInterface {
       return { ...this.config, isSmall: this.isSmall }
+    },
+    updatedEvents(): PropType<eventInterface[]>{
+      return { ...this.events }
     }
   },
 
   watch: {
-    events: {
-      deep: true,
-      handler(newVal, oldVal) {
-        // The check on strict equality as primitive values is needed,
-        // since we do not want to trigger a rerender on event-was-resized
-        if (JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
-          this.eventsDataProperty = newVal;
-          this.eventRenderingKey = this.eventRenderingKey + 1;
-        }
-
-        if (this.config.isSilent) return;
-
-        this.events.forEach((e) => this.ErrorsHelper.checkEventProperties(e));
-      },
-      immediate: true,
-    },
-
     config: {
       deep: true,
       handler(value: configInterface) {
@@ -325,8 +315,12 @@ export default defineComponent({
       const newEvents = this.eventsDataProperty.filter(
         (e) => e.id !== calendarEvent.id
       );
+
       this.eventsDataProperty = [calendarEvent, ...newEvents];
       this.$emit(`event-was-${eventType}`, calendarEvent);
+
+      if (this.config.isSilent) return;
+      newEvents.forEach((e) => this.ErrorsHelper.checkEventProperties(e));
     },
 
     setTimePointsFromDayBoundary(boundary: number) {
